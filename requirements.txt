@@ -1,0 +1,10 @@
+pyramid
+mako
+dogpile.cache
+pylibmc
+ratchetapi
+picles.plumber
+-e svn+http://google-visualization-python.googlecode.com/svn/trunk#egg=gviz_api
+-e git+http://github.com/fabiobatalha/gchart.git#egg=gchart
+-e git+http://github.com/scieloorg/xylose.git#egg=xylose
+
