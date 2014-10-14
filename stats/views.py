@@ -1,10 +1,62 @@
 # coding: utf-8
+import json
 
 from pyramid.view import view_config
+from pyramid.response import Response
 import pyramid.httpexceptions as exc
 
 from gchart import gchart
 
+
+@view_config(route_name='lines_data')
+def general_lines_data(request):
+
+    code = request.GET.get('code')
+    begin = request.GET.get('begin', '0000-01-01')
+    end = request.GET.get('end', '9999-12-31')
+    tqx = request.GET.get('tqx', 'reqId:0')
+
+    req_id = tqx.split(':')[1]
+
+    if end < begin:
+        raise exc.HTTPBadRequest()
+
+    options = {}
+
+    description, data = request.ratchetctrl.general_article_year_month_lines_chart(
+        code,
+        begin,
+        end
+    )
+
+    chart = gchart.GChart(
+        data,
+        description,
+        options
+    )
+
+    return Response(chart.data_table_response(req_id=req_id), content_type='text/javascript')
+
+
+@view_config(route_name='pie_data')
+def general_pie_data(request):
+
+    code = request.GET.get('code')
+    tqx = request.GET.get('tqx', 'reqId:0')
+
+    req_id = tqx.split(':')[1]
+
+    options = {}
+
+    description, data = request.ratchetctrl.general_source_page_pie_chart(code)
+
+    chart = gchart.GChart(
+        data,
+        description,
+        options
+    )
+
+    return Response(chart.data_table_response(req_id=req_id), content_type='text/javascript')
 
 @view_config(route_name='lines', renderer='templates/general.mako')
 def general_lines(request):
@@ -26,17 +78,10 @@ def general_lines(request):
         'pointSize': 5
     }
 
-    description, data = request.ratchetctrl.general_article_year_month_lines_chart(
-        code,
-        begin,
-        end
-    )
-
     chart = gchart.deploy(
         gchart.Line,
-        description,
-        data,
-        options,
+        '/general/lines/data/?%s' % request.query_string,
+        options=options,
         importjs=True
     )
 
@@ -54,13 +99,10 @@ def general_pie(request):
         'width': '100%'
     }
 
-    description, data = request.ratchetctrl.general_source_page_pie_chart(code)
-
     chart = gchart.deploy(
         gchart.Pie,
-        description,
-        data,
-        options,
+        '/general/pie/data/?%s' % request.query_string,
+        options=options,
         importjs=True
     )
 
@@ -85,11 +127,9 @@ def journals_list(request):
 
     lst = gchart.deploy(
         gchart.List,
-        description,
-        data,
-        options,
-        importjs=True,
-        render=True
+        '/general/lines/data/?%s' % request.query_string,
+        options=options,
+        importjs=True
     )
 
     return {'list': lst.decode('utf-8')}

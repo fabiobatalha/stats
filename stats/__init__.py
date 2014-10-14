@@ -17,9 +17,11 @@ def main(global_config, **settings):
     config.include('pyramid_chameleon')
     config.add_static_view('static', 'static', cache_max_age=3600)
     config.add_route('home', '/')
-    config.add_route('lines', '/general/lines')
-    config.add_route('pie', '/general/pie')
-    config.add_route('journals_list', '/journals/list')
+    config.add_route('lines', '/general/lines/')
+    config.add_route('lines_data', '/general/lines/data/')
+    config.add_route('pie', '/general/pie/')
+    config.add_route('pie_data', '/general/pie/data/')
+    config.add_route('journals_list', '/journals/list/')
 
     config.add_request_method(add_ratchet_controller, 'ratchetctrl', reify=True)
 
