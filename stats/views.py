@@ -4,9 +4,9 @@ import json
 from pyramid.view import view_config
 from pyramid.response import Response
 import pyramid.httpexceptions as exc
-
 from gchart import gchart
 
+import tools
 
 @view_config(route_name='lines_data')
 def general_lines_data(request):
@@ -14,29 +14,38 @@ def general_lines_data(request):
     code = request.GET.get('code')
     begin = request.GET.get('begin', '0000-01-01')
     end = request.GET.get('end', '9999-12-31')
-    tqx = request.GET.get('tqx', 'reqId:0')
-
-    req_id = tqx.split(':')[1]
+    tqx = tools.tqx_dict(request.GET.get('tqx', 'reqId:0'))
 
     if end < begin:
         raise exc.HTTPBadRequest()
 
     options = {}
 
-    description, data = request.ratchetctrl.general_article_year_month_lines_chart(
-        code,
-        begin,
-        end
-    )
+    if not 'out' in tqx or tqx['out'] == 'gviz':
+        description, data = request.ratchetctrl.general_article_year_month_lines_chart(
+            code,
+            'gviz',
+            begin,
+            end
+        )
 
-    chart = gchart.GChart(
-        data,
-        description,
-        options
-    )
+        chart = gchart.GChart(
+            data,
+            description,
+            options
+        )
 
-    return Response(chart.data_table_response(req_id=req_id), content_type='text/javascript')
+        return Response(chart.data_table_response(req_id=tqx['reqId']), content_type='text/javascript')
 
+    elif tqx['out'] == 'csv':
+        data = request.ratchetctrl.general_article_year_month_lines_chart(
+            code,
+            'csv',
+            begin,
+            end
+        )
+
+        return Response(data, content_type='text/csv')
 
 @view_config(route_name='pie_data')
 def general_pie_data(request):

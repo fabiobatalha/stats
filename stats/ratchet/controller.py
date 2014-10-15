@@ -24,7 +24,7 @@ def request_get_data(url):
 
 def ratchet_ctrl():
 
-    ratchetclient = Client()
+    ratchetclient = Client(api_uri='counter.ratchet.scielo.org/api/')
 
     return Ratchet(ratchetclient)
 
@@ -34,29 +34,39 @@ class Ratchet():
         self.ratchetclient = ratchetclient
 
 
-    def _general_article_year_month_lines_chart_to_gviz_data(self, accesses, begin='0000-01-01', end='9999-12-31'):
+    def _general_article_year_month_lines_base(self, accesses, begin='0000-01-01', end='9999-12-31'):
+        """
+        Creating dict year that represents the sum of accesses of all available years
+        separated by months for document types ['html', 'abstract', 'pdf']
+        """
 
         del accesses['total']
         del accesses['code']
 
-        description = [('months', 'string', 'months')]
-
         empty_months_range = {'%02d' % x: None for x in range(1, 13)}
-        # Creating dict year that represents the sum of accesses of all available years
-        # separated by months for the pages sci_arttext and download
-        years = {}
+        data = {}
         for key, value in accesses.items():
             if key in ['html', 'abstract', 'pdf']:
                 del value['total']
                 for year, months in value.items():
                     del months['total']
                     if year[1:] >= begin[0:4] and year[1:] <= end[0:4]:
-                        ye = years.setdefault(year[1:], copy.copy(empty_months_range))
+                        ye = data.setdefault(year[1:], copy.copy(empty_months_range))
                         for month, days in months.items():
                                 if year[1:]+'-'+month[1:] >= begin and year[1:]+'-'+month[1:] <= end:
                                     if ye[month[1:]] == None:
                                         ye[month[1:]] = 0
                                     ye[month[1:]] += days['total']
+
+        return data
+
+    def _general_article_year_month_lines_chart_to_gviz_data(self, accesses, begin='0000-01-01', end='9999-12-31'):
+        """
+        Prepare data received by self._general_article_year_month_lines_base according to gviz format
+        """
+        years = self._general_article_year_month_lines_base(accesses, begin=begin, end=end)
+
+        description = [('months', 'string', 'months')]
 
         data = []
         for month in range(1, 13):
@@ -71,6 +81,21 @@ class Ratchet():
             description.append((year, 'number'))
 
         return description, data
+
+    def _general_article_year_month_lines_chart_to_csv_data(self, accesses, begin='0000-01-01', end='9999-12-31'):
+        """
+        Prepare data received by self._general_article_year_month_lines_base according to csv format
+        """
+        data = self._general_article_year_month_lines_base(accesses, begin=begin, end=end)
+
+        output = 'year,month,total\r\n'
+
+        for year, months in sorted(data.items()):
+            for month, total in sorted(months.items()):
+                if total:
+                    output += '%s\r\n' % ','.join([str(year), str(month), str(total)])
+
+        return output
 
     def _general_source_page_pie_chart_to_gviz_data(self, accesses, begin=None, end=None):
 
@@ -102,6 +127,7 @@ class Ratchet():
                 data.append([key, value['total']])
 
         return description, data
+
 
     def _journals_list_to_gviz_data(self, journals, begin=None, end=None):
 
@@ -138,17 +164,27 @@ class Ratchet():
         return description, data
 
     @cache_region.cache_on_arguments()
-    def general_article_year_month_lines_chart(self, code, begin=None, end=None):
+    def general_article_year_month_lines_chart(self, code, out=None, begin=None, end=None):
+
+        allowed_outputs = ['gviz', 'csv']
+
+        if not out in allowed_outputs:
+            raise ValueError('output %s not in %s' % (out, str(allowed_outputs)))
 
         accesses = self.ratchetclient.query('general').filter(code=code).next()
 
-        description, data = self._general_article_year_month_lines_chart_to_gviz_data(
-            accesses,
-            begin=begin,
-            end=end
-        )
-
-        return description, data
+        if out == 'gviz':
+            return self._general_article_year_month_lines_chart_to_gviz_data(
+                accesses,
+                begin=begin,
+                end=end
+            )
+        elif out == 'csv':
+            return self._general_article_year_month_lines_chart_to_csv_data(
+                accesses,
+                begin=begin,
+                end=end
+            )
 
     @cache_region.cache_on_arguments()
     def general_source_page_pie_chart(self, code, begin=None, end=None):
