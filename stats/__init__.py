@@ -9,7 +9,13 @@ def main(global_config, **settings):
 
     def add_ratchet_controller(request):
 
-        ratchetctrl = ratchet_ctrl()
+        ratchetctrl = ratchet_ctrl(settings['ratchetapi_host'])
+
+        return ratchetctrl
+
+    def add_ratchet_counter_controller(request):
+
+        ratchetctrl = ratchet_ctrl(settings['counter_ratchetapi_host'])
 
         return ratchetctrl
 
@@ -24,6 +30,7 @@ def main(global_config, **settings):
     config.add_route('journals_list', '/journals/list/')
 
     config.add_request_method(add_ratchet_controller, 'ratchetctrl', reify=True)
+    config.add_request_method(add_ratchet_counter_controller, 'ratchetctrl_counter', reify=True)
 
     ## Setting up cache
     if 'memcached_host' in settings:

@@ -6,6 +6,7 @@ import copy
 import json
 import requests
 import logging
+import datetime
 
 from dogpile.cache import make_region
 from dogpile.cache.util import sha1_mangle_key
@@ -17,14 +18,9 @@ from stats import articlemeta
 cache_region = make_region(name='stats')
 
 
-def request_get_data(url):
+def ratchet_ctrl(api_uri=None):
 
-    data = request.get(url).json
-
-
-def ratchet_ctrl():
-
-    ratchetclient = Client(api_uri='counter.ratchet.scielo.org/api/')
+    ratchetclient = Client(api_uri=api_uri)
 
     return Ratchet(ratchetclient)
 
@@ -42,6 +38,12 @@ class Ratchet():
 
         del accesses['total']
         del accesses['code']
+
+        if len(begin) == 4:
+            begin += '-01' 
+
+        if len(end) == 4:
+            end += '-12' 
 
         empty_months_range = {'%02d' % x: None for x in range(1, 13)}
         data = {}
@@ -97,12 +99,7 @@ class Ratchet():
 
         return output
 
-    def _general_source_page_pie_chart_to_gviz_data(self, accesses, begin=None, end=None):
-
-        description = [
-            ('source', 'string', 'source page'),
-            ('accesses', 'number', 'accesses'),
-        ]
+    def _general_source_page_pie_chart_to_base_data(self, accesses):
 
         if 'code' in accesses:
             del(accesses['code'])
@@ -126,10 +123,31 @@ class Ratchet():
             if key[0] != 'y':
                 data.append([key, value['total']])
 
+        return data
+
+    def _general_source_page_pie_chart_to_gviz_data(self, accesses):
+
+        data = self._general_source_page_pie_chart_to_base_data(accesses)
+
+        description = [
+            ('source', 'string', 'source page'),
+            ('accesses', 'number', 'accesses'),
+        ]
+
         return description, data
 
+    def _general_source_page_pie_chart_to_csv_data(self, accesses):
 
-    def _journals_list_to_gviz_data(self, journals, begin=None, end=None):
+        data = self._general_source_page_pie_chart_to_base_data(accesses)
+
+        output = u'source,total\r\n'
+        
+        for item in sorted(data):
+            output += u'%s\r\n' % u','.join([str(i) for i in item])
+
+        return output
+
+    def _journals_list_to_gviz_data(self, journals):
 
         description = [
             ('journal_title', 'string', 'journal'),
@@ -187,23 +205,27 @@ class Ratchet():
             )
 
     @cache_region.cache_on_arguments()
-    def general_source_page_pie_chart(self, code, begin=None, end=None):
+    def general_source_page_pie_chart(self, code, out=None):
+
+        allowed_outputs = ['gviz', 'csv']
+
+        if not out in allowed_outputs:
+            raise ValueError('output %s not in %s' % (out, str(allowed_outputs)))
+
         accesses = self.ratchetclient.query('general').filter(code=code).next()
 
-        description, data = self._general_source_page_pie_chart_to_gviz_data(
-            accesses,
-            begin=begin,
-            end=end
-        )
-
-        return description, data
+        if out == 'gviz':
+            return self._general_source_page_pie_chart_to_gviz_data(accesses)
+        elif out == 'csv':
+            return self._general_source_page_pie_chart_to_csv_data(accesses)
 
     @cache_region.cache_on_arguments()
-    def journal(self, code, begin=None, end=None):
+    def journal(self, code):
 
         journal = self.ratchetclient.query('journals').find(code=code)
 
-        description, data = self._journals_list_to_gviz_data(journal,
+        description, data = self._journals_list_to_gviz_data(
+            journal,
             begin=begin,
             end=end
         )
@@ -221,9 +243,6 @@ class Ratchet():
                 jn['accesses'] = journal
                 jn['metadata'] = xylose_journal
 
-        description, data = self._journals_list_to_gviz_data(journals,
-            begin=begin,
-            end=end
-        )
+        description, data = self._journals_list_to_gviz_data(journals)
 
         return description, data

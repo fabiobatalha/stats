@@ -8,13 +8,26 @@ from gchart import gchart
 
 import tools
 
+def get_ratchetctrl(request):
+    mode = request.GET.get('mode', None)
+
+    if mode == 'counter':
+        ratchetctrl = request.ratchetctrl_counter
+    elif mode == 'scielo':
+        ratchetctrl = request.ratchetctrl
+    else:
+        ratchetctrl = request.ratchetctrl
+
+    return ratchetctrl
+
 @view_config(route_name='lines_data')
 def general_lines_data(request):
-
     code = request.GET.get('code')
     begin = request.GET.get('begin', '0000-01-01')
     end = request.GET.get('end', '9999-12-31')
     tqx = tools.tqx_dict(request.GET.get('tqx', 'reqId:0'))
+
+    ratchetctrl = get_ratchetctrl(request)
 
     if end < begin:
         raise exc.HTTPBadRequest()
@@ -22,7 +35,7 @@ def general_lines_data(request):
     options = {}
 
     if not 'out' in tqx or tqx['out'] == 'gviz':
-        description, data = request.ratchetctrl.general_article_year_month_lines_chart(
+        description, data = ratchetctrl.general_article_year_month_lines_chart(
             code,
             'gviz',
             begin,
@@ -38,7 +51,7 @@ def general_lines_data(request):
         return Response(chart.data_table_response(req_id=tqx['reqId']), content_type='text/javascript')
 
     elif tqx['out'] == 'csv':
-        data = request.ratchetctrl.general_article_year_month_lines_chart(
+        data = ratchetctrl.general_article_year_month_lines_chart(
             code,
             'csv',
             begin,
@@ -49,23 +62,35 @@ def general_lines_data(request):
 
 @view_config(route_name='pie_data')
 def general_pie_data(request):
-
     code = request.GET.get('code')
-    tqx = request.GET.get('tqx', 'reqId:0')
+    tqx = tools.tqx_dict(request.GET.get('tqx', 'reqId:0'))
 
-    req_id = tqx.split(':')[1]
+    ratchetctrl = get_ratchetctrl(request)
 
     options = {}
 
-    description, data = request.ratchetctrl.general_source_page_pie_chart(code)
+    if not 'out' in tqx or tqx['out'] == 'gviz':
+        description, data = ratchetctrl.general_source_page_pie_chart(
+            code,
+            'gviz'
+        )
 
-    chart = gchart.GChart(
-        data,
-        description,
-        options
-    )
+        chart = gchart.GChart(
+            data,
+            description,
+            options
+        )
 
-    return Response(chart.data_table_response(req_id=req_id), content_type='text/javascript')
+        return Response(chart.data_table_response(req_id=tqx['reqId']), content_type='text/javascript')
+
+    elif tqx['out'] == 'csv':
+        data = ratchetctrl.general_source_page_pie_chart(
+            code,
+            'csv'
+        )
+
+        return Response(data, content_type='text/csv')
+
 
 @view_config(route_name='lines', renderer='templates/general.mako')
 def general_lines(request):
