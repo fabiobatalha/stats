@@ -20,9 +20,11 @@ def main(global_config, **settings):
         return ratchetctrl
 
     config = Configurator(settings=settings)
-    config.include('pyramid_chameleon')
     config.add_static_view('static', 'static', cache_max_age=3600)
     config.add_route('home', '/')
+    config.add_route('accesses', '/w/accesses/')
+    config.add_route('bibliometrics', '/w/bibliometrics/')
+    config.add_route('production', '/w/production/')
     config.add_route('lines', '/general/lines/')
     config.add_route('lines_data', '/general/lines/data/')
     config.add_route('pie', '/general/pie/')
@@ -41,5 +43,6 @@ def main(global_config, **settings):
     else:
         cache_region.configure('dogpile.cache.null')
 
+    config.add_mako_renderer('.html')
     config.scan()
     return config.make_wsgi_app()
