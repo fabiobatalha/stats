@@ -9,17 +9,15 @@ import logging
 import datetime
 
 from dogpile.cache import make_region
-from dogpile.cache.util import sha1_mangle_key
 from ratchetapi import Client
 
 from stats import articlemeta
 
 
-cache_region = make_region(name='stats')
+cache_region = make_region(name='ratchet')
 
 
 def ratchet_ctrl(api_uri=None):
-
     ratchetclient = Client(api_uri=api_uri)
 
     return Ratchet(ratchetclient)

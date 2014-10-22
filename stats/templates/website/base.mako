@@ -23,16 +23,9 @@
               <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Collections <span class="caret"></span></a>
                 <ul class="dropdown-menu" role="menu">
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Argentina</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Brazil</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Chile</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Colombia</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Costa Rica</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Cuba</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Portugal</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Spain</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#">South Africa</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#">Venezuela</a></li>
+                  % for acron, name in sorted(collections.items(), key=lambda x: x[1]):
+                    <li role="presentation"><a role="menuitem" tabindex="-1" href="?collection=${acron}">${name}</a></li>
+                  % endfor
                 </ul>
               </li>
             </ul>
@@ -43,11 +36,11 @@
               <button type="submit" class="btn btn-default">select</button>
             </form>
             <div class="btn-group navbar-btn navbar-right" data-toggle="buttons">
-              <label class="btn btn-default active">
-                <input type="radio" name="options" id="option1" checked> Counter
+              <label class="btn btn-default ${'active' if selected_mode == 'counter' else ''}">
+                <input type="radio" name="options" id="modecounter" ${'checked' if selected_mode == 'counter' else ''}>Counter
               </label>
-              <label class="btn btn-default">
-                <input type="radio" name="options" id="option2"> SciELO
+              <label class="btn btn-default ${'active' if selected_mode == 'scielo' else ''}">
+                <input type="radio" name="options" id="modescielo" ${'checked' if selected_mode == 'scielo' else ''}>SciELO
               </label>
             </div>
           </div> <!-- collapse -->
@@ -57,16 +50,19 @@
     <div class="row">
       <div class="header-col level1">
         <div class="container-fluid">
-            Brazil
+            <span id="collection_name">${selected_collection}</span>
         </div>
       </div>
     </div>
     <div class="row">
+      % if selected_journal:
       <div class="header-col level2">
         <div class="container-fluid">
-            Revista de Saúde Pública
+            Journal Name
+            <a href="#" class="btn btn-default btn-xs navbar-right">remove</span></a>
         </div>
       </div>
+      % endif
     </div>
     <div class="row">
       <nav class="navbar navbar-default" role="navigation">
@@ -86,5 +82,19 @@
     </div><!-- div row -->
     <script src="/static/jquery-1.11.1/jquery-1.11.1.min.js"></script>
     <script src="/static/bootstrap-3.2.0/js/bootstrap.min.js"></script>
+    <script>
+      $('#modescielo').change(function () {
+        $.get("/ajx/toggle_mode/?mode=scielo", function (){
+          location.reload();  
+        });
+      });
+      $('#modecounter').change(function () {
+        $.get("/ajx/toggle_mode/?mode=counter", function (){
+          location.reload();
+        });
+        location.reload();
+      });
+    </script>
+    <%block name="extra_js" />
   </body>
 </html>

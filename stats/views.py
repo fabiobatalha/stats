@@ -1,12 +1,11 @@
 # coding: utf-8
-import json
-
 from pyramid.view import view_config
 from pyramid.response import Response
 import pyramid.httpexceptions as exc
 from gchart import gchart
 
-import tools
+from stats import tools
+
 
 def get_ratchetctrl(request):
     mode = request.GET.get('mode', None)
@@ -115,8 +114,7 @@ def general_lines(request):
     chart = gchart.deploy(
         gchart.Line,
         '/general/lines/data/?%s' % request.query_string,
-        options=options,
-        importjs=True
+        options=options
     )
 
     return {'chart': chart}
@@ -136,34 +134,7 @@ def general_pie(request):
     chart = gchart.deploy(
         gchart.Pie,
         '/general/pie/data/?%s' % request.query_string,
-        options=options,
-        importjs=True
+        options=options
     )
 
     return {'chart': chart}
-
-
-@view_config(route_name='journals_list', renderer='templates/journals_list.mako')
-def journals_list(request):
-
-    options = {
-        'title': 'fulltext and abstract accesses',
-        'allowHtml': True,
-        'page': 'enable',
-        'pageSize': 20,
-        'width': '100%',
-        'showRowNumber': True,
-        'sortColumn': 7,
-        'sortAscending': False
-    }
-
-    description, data = request.ratchetctrl.journals_list()
-
-    lst = gchart.deploy(
-        gchart.List,
-        '/general/lines/data/?%s' % request.query_string,
-        options=options,
-        importjs=True
-    )
-
-    return {'list': lst.decode('utf-8')}
