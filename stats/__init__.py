@@ -11,6 +11,7 @@ def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
     config = Configurator(settings=settings)
+    config.include('pyramid_mako')
     config.add_static_view('static', 'static', cache_max_age=3600)
     config.add_route('home', '/')
     config.add_route('accesses', '/w/accesses/')
@@ -21,6 +22,7 @@ def main(global_config, **settings):
     config.add_route('lines', '/general/lines/')
     config.add_route('lines_data', '/general/lines/data/')
     config.add_route('ajx_toggle_mode', '/ajx/toggle_mode/')
+    config.add_route('sess_clean_journal', '/sess/clean_journal/')
 
     # Templates Config
     config.add_mako_renderer('.html')

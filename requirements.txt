@@ -1,4 +1,5 @@
 pyramid
+pyramid_mako
 mako
 dogpile.cache
 pylibmc

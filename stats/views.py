@@ -6,7 +6,6 @@ from gchart import gchart
 
 from stats import tools
 
-
 def get_ratchetctrl(request):
     mode = request.GET.get('mode', None)
 
@@ -93,20 +92,19 @@ def general_pie_data(request):
 
 @view_config(route_name='lines', renderer='templates/general.mako')
 def general_lines(request):
-
-    code = request.GET.get('code')
     begin = request.GET.get('begin', '0000-01-01')
     end = request.GET.get('end', '9999-12-31')
+    importjs = request.GET.get('importjs', False)
 
     if end < begin:
         raise exc.HTTPBadRequest()
 
     options = {
-        'title': 'fulltext and abstract accesses',
         'legend': {'position': 'rigth'},
         'hAxis': {'title': 'Months'},
         'vAxis': {'title': 'Accesses'},
-        'width': '100%',
+        'width': '500',
+        'height': '300',
         'curveType': 'function',
         'pointSize': 5
     }
@@ -114,7 +112,8 @@ def general_lines(request):
     chart = gchart.deploy(
         gchart.Line,
         '/general/lines/data/?%s' % request.query_string,
-        options=options
+        options=options,
+        importjs=True
     )
 
     return {'chart': chart}
@@ -122,19 +121,19 @@ def general_lines(request):
 
 @view_config(route_name='pie', renderer='templates/general.mako')
 def general_pie(request):
-
-    code = request.GET.get('code')
+    importjs = request.GET.get('importjs', False)
 
     options = {
-        'title': 'page source',
         'legend': {'position': 'rigth'},
-        'width': '100%'
+        'width': '500',
+        'height': '300'
     }
 
     chart = gchart.deploy(
         gchart.Pie,
         '/general/pie/data/?%s' % request.query_string,
-        options=options
+        options=options,
+        importjs=True
     )
 
     return {'chart': chart}

@@ -63,6 +63,10 @@ def check_session(wrapped):
         journal = request.GET.get('journal', None)
         mode = request.GET.get('mode', None)
 
+        if journal == 'clean':
+            del(request.session['journal'])
+            journal = None
+
         session_mode = request.session.get('mode', None)
         session_collection = request.session.get('collection', None)
         session_journal = request.session.get('journal', None)
@@ -73,7 +77,9 @@ def check_session(wrapped):
         if collection and collection != session_collection:
             request.session['collection'] = collection
             request.session['journal'] = None
-        
+        else:
+            request.session['collection'] = 'scl'
+
         if journal and journal != session_journal:
             request.session['journal'] = journal
 

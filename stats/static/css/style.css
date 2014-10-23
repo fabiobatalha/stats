@@ -20,3 +20,8 @@ body { padding-top: 70px; }
 .level2 {
     background-color: #A279AA;
 }
+
+.chartframebox {
+    border: 0px;
+    overflow: hidden;
+}
