@@ -3,10 +3,7 @@
 from collections import OrderedDict
 import calendar
 import copy
-import json
 import requests
-import logging
-import datetime
 
 from dogpile.cache import make_region
 from ratchetapi import Client
@@ -14,13 +11,20 @@ from ratchetapi import Client
 from stats import articlemeta
 
 
-cache_region = make_region(name='ratchet')
+def cache_key_with_object_address(namespace, fn, **kw):
+    fname = fn.__name__
+    def generate_key(*arg):
+        return namespace or '' + "_" + fname + "_".join(str(item) for item in arg)
+    return generate_key
+
+cache_region = make_region(name='ratchet', function_key_generator=cache_key_with_object_address)
 
 
 def ratchet_ctrl(api_uri=None):
     ratchetclient = Client(api_uri=api_uri)
 
     return Ratchet(ratchetclient)
+
 
 class Ratchet():
 

@@ -10,6 +10,47 @@ from stats import tools
 DEFAULT_MODE = 'scielo' # could also be 'counter'
 
 
+def base_data_manager(wrapped):
+    """
+        Decorator to load common data used by all views
+    """
+
+    @tools.check_session
+    def check(request, *arg, **kwargs):
+
+        collections = request.articlemetactrl.certified_collections()
+
+        code = request.session.get('journal',request.session.get('collection', None))
+
+        journals = request.articlemetactrl.collection_journals(request.session['collection'])
+
+        journal = journals.get(request.session.get('journal', None), None)
+
+        selected_journal = None
+        selected_journal_code = None
+        if journal:
+            selected_journal = journal.title
+            selected_journal_code = journal.scielo_issn
+
+        data = {
+            'collections': collections,
+            'selected_code': code,
+            'selected_journal': selected_journal,
+            'selected_journal_code': selected_journal_code,
+            'selected_collection': collections[request.session.get('collection', None)],
+            'selected_collection_code': request.session.get('collection', None),
+            'selected_mode': request.session.get('mode', DEFAULT_MODE),
+            'journals': journals
+        }
+
+        setattr(request, 'data_manager', data)
+
+        return wrapped(request, *arg, **kwargs)
+
+    check.__doc__ = wrapped.__doc__
+
+    return check
+
 @view_config(route_name='ajx_toggle_mode', renderer='json')
 @tools.check_session
 def ajx_toggle_mode(request):
@@ -17,138 +58,37 @@ def ajx_toggle_mode(request):
     return True
 
 @view_config(route_name='home', renderer='templates/website/home.mako')
-@tools.check_session
+@base_data_manager
 def home(request):
-    collections = request.articlemetactrl.certified_collections()
 
-    journals = request.articlemetactrl.collection_journals(request.session['collection'])
-
-    journal = journals.get(request.session.get('journal', None), None)
-
-    selected_journal = None
-    selected_journal_code = None
-    if journal:
-        selected_journal = journal.title
-        selected_journal_code = journal.scielo_issn
-
-    data = {
-        'data': 'home',
-        'collections': collections,
-        'selected_journal': selected_journal,
-        'selected_journal_code': selected_journal_code,
-        'selected_collection': collections[request.session.get('collection', None)],
-        'selected_collection_code': request.session.get('collection', None),
-        'selected_mode': request.session.get('mode', DEFAULT_MODE),
-        'journals': journals
-    }
+    data = request.data_manager
+    data['page'] = 'home'
 
     return data
 
 @view_config(route_name='accesses', renderer='templates/website/accesses.mako')
-@tools.check_session
+@base_data_manager
 def accesses(request):
 
-    collections = request.articlemetactrl.certified_collections()
-
-    request.GET['code'] = request.session.get('collection', None)
-    request.GET['mode'] = request.session.get('mode', 'scielo')
-
-    code = request.session.get('journal',
-        request.session.get('collection', None)
-    )
-
-    pie = '/general/pie/?code={0}&mode={1}&importjs=True'.format(
-        code,
-        request.session.get('mode', 'scielo')
-    )
-
-    lines = '/general/lines/?code={0}&mode={1}&importjs=True'.format(
-        code,
-        request.session.get('mode', 'scielo')
-    )
-
-    journals = request.articlemetactrl.collection_journals(request.session['collection'])
-
-    journal = journals.get(request.session.get('journal', None), None)
-
-    selected_journal = None
-    selected_journal_code = None
-    if journal:
-        selected_journal = journal.title
-        selected_journal_code = journal.scielo_issn
-
-    data = {
-        'data': 'accesses',
-        'collections': collections,
-        'selected_journal': selected_journal,
-        'selected_journal_code': selected_journal_code ,
-        'selected_collection': collections[request.session.get('collection', None)],
-        'selected_collection_code': request.session.get('collection', None),
-        'selected_mode': request.session.get('mode', DEFAULT_MODE),
-        'pie': pie,
-        'lines': lines,
-        'page': 'accesses',
-        'journals': journals
-    }
+    data = request.data_manager
+    data['page'] = 'accesses'
 
     return data
 
 @view_config(route_name='production', renderer='templates/website/production.mako')
-@tools.check_session
+@base_data_manager
 def production(request):
 
-    collections = request.articlemetactrl.certified_collections()
-
-    journals = request.articlemetactrl.collection_journals(request.session['collection'])
-
-    journal = journals.get(request.session.get('journal', None), None)
-
-    selected_journal = None
-    selected_journal_code = None
-    if journal:
-        selected_journal = journal.title
-        selected_journal_code = journal.scielo_issn
-
-    data = {
-        'data': 'production',
-        'collections': collections,
-        'selected_journal': selected_journal,
-        'selected_journal_code': selected_journal_code,
-        'selected_collection': collections[request.session.get('collection', None)],
-        'selected_collection_code': request.session.get('collection', None),
-        'selected_mode': request.session.get('mode', DEFAULT_MODE),
-        'page': 'production',
-        'journals': journals
-    }
+    data = request.data_manager
+    data['page'] = 'production'
 
     return data
 
 @view_config(route_name='bibliometrics', renderer='templates/website/bibliometrics.mako')
-@tools.check_session
+@base_data_manager
 def bibliometrics(request):
 
-    collections = request.articlemetactrl.certified_collections()
-
-    journals = request.articlemetactrl.collection_journals(request.session['collection'])
-
-    journal = journals.get(request.session.get('journal', None), None)
-
-    selected_journal = None
-    selected_journal_code = None
-    if journal:
-        selected_journal = journal.title
-        selected_journal_code = journal.scielo_issn
-
-    data = {
-        'data': 'bibliometrics',
-        'collections': collections,
-        'selected_journal': selected_journal,
-        'selected_journal_code': selected_journal_code,
-        'selected_collection': collections[request.session.get('collection', None)],
-        'selected_collection_code': request.session.get('collection', None),
-        'selected_mode': request.session.get('mode', DEFAULT_MODE),
-        'page': 'bibliometrics',
-        'journals': journals
-    }
+    data = request.data_manager
+    data['page'] = 'bibliometrics'
 
     return data

@@ -76,8 +76,10 @@ def check_session(wrapped):
 
         if collection and collection != session_collection:
             request.session['collection'] = collection
-            request.session['journal'] = None
-        else:
+            if 'journal' in request.session:
+                del(request.session['journal'])
+
+        elif not session_collection:
             request.session['collection'] = 'scl'
 
         if journal and journal != session_journal:

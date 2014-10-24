@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
 
 <%block name="central_container">
-    <p>${data}</p>
+    <p>${page}</p>
 </%block>
