@@ -1,10 +1,5 @@
 # coding: utf-8
 from pyramid.view import view_config
-from pyramid.response import Response
-import pyramid.httpexceptions as exc
-from pyramid.request import Request
-
-from stats import views
 from stats import tools
 
 DEFAULT_MODE = 'scielo' # could also be 'counter'
@@ -16,16 +11,16 @@ def base_data_manager(wrapped):
     """
 
     @tools.check_session
-    def check(request, *arg, **kwargs):
+    def wrapper(request, *arg, **kwargs):
+        if request.session['mode'] == 'counter':
+            setattr(request, 'statsctrl', request.stats_counter)
+        else:
+            setattr(request, 'statsctrl', request.stats_scielo)
 
-        collections = request.articlemetactrl.certified_collections()
-
+        collections = request.statsctrl.articlemeta.certified_collections()
         code = request.session.get('journal',request.session.get('collection', None))
-
-        journals = request.articlemetactrl.collection_journals(request.session['collection'])
-
+        journals = request.statsctrl.articlemeta.collection_journals(request.session['collection'])
         journal = journals.get(request.session.get('journal', None), None)
-
         selected_journal = None
         selected_journal_code = None
         if journal:
@@ -47,9 +42,9 @@ def base_data_manager(wrapped):
 
         return wrapped(request, *arg, **kwargs)
 
-    check.__doc__ = wrapped.__doc__
+    wrapper.__doc__ = wrapped.__doc__
 
-    return check
+    return wrapper
 
 @view_config(route_name='ajx_toggle_mode', renderer='json')
 @tools.check_session

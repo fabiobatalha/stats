@@ -3,12 +3,12 @@
 import unittest
 import copy
 
-from stats.ratchet import controller
+from stats.controller import Stats
 from xylose.scielodocument import Journal
 from ratchetapi import Client
 
 
-class ControllerTests(unittest.TestCase):
+class StatsTests(unittest.TestCase):
 
     def setUp(self):
         from fixtures.journals import journal_accesses, metadata
@@ -23,16 +23,16 @@ class ControllerTests(unittest.TestCase):
             }
         }
 
-    def test_ratchet_ctrl(self):
-        from stats.ratchet.controller import Ratchet
+    def test_thematic_area_pie_data(self):
 
-        ctrl = controller.ratchet_ctrl()
+        ctrl = Stats('fakeratchet', 'fakearticlemeta')
 
-        self.assertTrue(isinstance(ctrl, Ratchet))
+        description, data = ctrl.thematic_area_pie_chart('scl')
+
 
     def test_journals_list_to_gviz_data(self):
 
-        ctrl = controller.Ratchet('fakeratchetapiclient')
+        ctrl = Stats('fakeratchet', 'fakearticlemeta')
 
         description, data = ctrl._journals_list_to_gviz_data(self.journals)
 
@@ -42,7 +42,7 @@ class ControllerTests(unittest.TestCase):
 
     def test_general_article_year_month_lines_chart_to_csv_data(self):
 
-        ctrl = controller.Ratchet('fakeratchetapiclient')
+        ctrl = Stats('fakeratchet', 'fakearticlemeta')
 
         data = ctrl._general_article_year_month_lines_chart_to_csv_data(self.accesses)
 
@@ -52,7 +52,7 @@ class ControllerTests(unittest.TestCase):
 
     def test_general_article_year_month_lines_chart_to_csv_data_begin_end(self):
 
-        ctrl = controller.Ratchet('fakeratchetapiclient')
+        ctrl = Stats('fakeratchet', 'fakearticlemeta')
 
         data = ctrl._general_article_year_month_lines_chart_to_csv_data(self.accesses, begin='2013-06', end='2013-08')
 
@@ -62,7 +62,7 @@ class ControllerTests(unittest.TestCase):
 
     def test_general_article_year_month_lines_chart_to_csv_data_begin_end(self):
 
-        ctrl = controller.Ratchet('fakeratchetapiclient')
+        ctrl = Stats('fakeratchet', 'fakearticlemeta')
 
         data = ctrl._general_article_year_month_lines_chart_to_csv_data(self.accesses, begin='2013', end='2013')
 
@@ -72,7 +72,7 @@ class ControllerTests(unittest.TestCase):
 
     def test_general_article_year_month_lines_chart_to_gviz_data(self):
 
-        ctrl = controller.Ratchet('fakeratchetapiclient')
+        ctrl = Stats('fakeratchet', 'fakearticlemeta')
 
         description, data = ctrl._general_article_year_month_lines_chart_to_gviz_data(self.accesses)
 
@@ -95,7 +95,7 @@ class ControllerTests(unittest.TestCase):
 
     def test_general_article_year_month_lines_chart_to_gviz_data_begin_end(self):
 
-        ctrl = controller.Ratchet('fakeratchetapiclient')
+        ctrl = Stats('fakeratchet', 'fakearticlemeta')
 
         description, data = ctrl._general_article_year_month_lines_chart_to_gviz_data(self.accesses, begin='2013-06', end='2014-05')
 
@@ -118,7 +118,7 @@ class ControllerTests(unittest.TestCase):
 
     def test_general_article_year_month_lines_chart_to_gviz_description(self):
 
-        ctrl = controller.Ratchet('fakeratchetapiclient')
+        ctrl = Stats('fakeratchet', 'fakearticlemeta')
 
         description, data = ctrl._general_article_year_month_lines_chart_to_gviz_data(self.accesses)
 
@@ -133,7 +133,7 @@ class ControllerTests(unittest.TestCase):
 
     def test_general_source_page_pie_chart_to_csv_data(self):
 
-        ctrl = controller.Ratchet('fakeratchetapiclient')
+        ctrl = Stats('fakeratchet', 'fakearticlemeta')
 
         data = ctrl._general_source_page_pie_chart_to_csv_data(self.accesses)
 
@@ -143,7 +143,7 @@ class ControllerTests(unittest.TestCase):
 
     def test_general_source_page_pie_chart_to_gviz_data(self):
 
-        ctrl = controller.Ratchet('fakeratchetapiclient')
+        ctrl = Stats('fakeratchet', 'fakearticlemeta')
 
         description, data = ctrl._general_source_page_pie_chart_to_gviz_data(self.accesses)
 
@@ -160,7 +160,7 @@ class ControllerTests(unittest.TestCase):
 
     def test_general_source_page_pie_chart_to_gviz_data_description(self):
 
-        ctrl = controller.Ratchet('fakeratchetapiclient')
+        ctrl = Stats('fakeratchet', 'fakearticlemeta')
 
         description, data = ctrl._general_source_page_pie_chart_to_gviz_data(self.accesses)
 

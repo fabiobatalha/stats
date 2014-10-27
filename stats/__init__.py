@@ -1,6 +1,7 @@
 from pyramid.session import SignedCookieSessionFactory
 from pyramid.config import Configurator
 
+from stats.controller import Stats
 from stats.ratchet.controller import ratchet_ctrl
 from stats.ratchet.controller import cache_region as ratchet_cache_region
 from stats.articlemeta.controller import articlemeta_ctrl
@@ -21,6 +22,7 @@ def main(global_config, **settings):
     config.add_route('pie_data', '/general/pie/data/')
     config.add_route('lines', '/general/lines/')
     config.add_route('lines_data', '/general/lines/data/')
+    config.add_route('list_data', '/general/list/data/')
     config.add_route('ajx_toggle_mode', '/ajx/toggle_mode/')
     config.add_route('sess_clean_journal', '/sess/clean_journal/')
 
@@ -43,22 +45,19 @@ def main(global_config, **settings):
     articlemetactrl = articlemeta_ctrl(settings['articlemetaapi_host'])
     scielo_ratchetctrl = ratchet_ctrl(settings['ratchetapi_host'])
     counter_ratchetctrl = ratchet_ctrl(settings['counter_ratchetapi_host'])
+    scielo_statsctrl = Stats(scielo_ratchetctrl, articlemetactrl)
+    counter_statsctrl = Stats(counter_ratchetctrl, articlemetactrl)
 
-    def add_ratchet_controller(request):
+    def add_stats_controller_scielo(request):
         
-        return scielo_ratchetctrl
-
-    def add_ratchet_counter_controller(request):
-
-        return counter_ratchetctrl
-
-    def add_articlemeta_controller(request):        
-
-        return articlemetactrl
+        return scielo_statsctrl
         
-    config.add_request_method(add_ratchet_controller, 'ratchetctrl', reify=True)
-    config.add_request_method(add_ratchet_counter_controller, 'ratchetctrl_counter', reify=True)
-    config.add_request_method(add_articlemeta_controller, 'articlemetactrl', reify=True)
+    def add_stats_controller_counter(request):
+        
+        return counter_statsctrl
+
+    config.add_request_method(add_stats_controller_scielo, 'stats_scielo', reify=True)
+    config.add_request_method(add_stats_controller_counter, 'stats_counter', reify=True)
 
     ## Session config
     navegation_session_factory = SignedCookieSessionFactory('sses_navegation')

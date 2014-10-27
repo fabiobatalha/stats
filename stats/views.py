@@ -5,27 +5,49 @@ import pyramid.httpexceptions as exc
 from gchart import gchart
 
 from stats import tools
+from stats import controller
 
-def get_ratchetctrl(request):
-    mode = request.GET.get('mode', None)
+def define_mode(wrapped):
+    """
+        Decorator to load the selected stats controller according to the given
+        mode in the query_string
+    """
+    @tools.check_session
+    def wrapper(request, *arg, **kwargs):
+        mode = request.GET.get('mode', None)
 
-    if mode == 'counter':
-        ratchetctrl = request.ratchetctrl_counter
-    elif mode == 'scielo':
-        ratchetctrl = request.ratchetctrl
-    else:
-        ratchetctrl = request.ratchetctrl
+        if mode == 'counter':
+            setattr(request, 'statsctrl', request.stats_counter)
+        elif mode == 'scielo':
+            setattr(request, 'statsctrl', request.stats_scielo)
+        else:
+            setattr(request, 'statsctrl', request.stats_scielo)
 
-    return ratchetctrl
+        return wrapped(request, *arg, **kwargs)
+
+    wrapper.__doc__ = wrapped.__doc__
+
+    return wrapper
+
+@view_config(route_name='list_data')
+@define_mode
+def general_list_data(request):
+    dtype = request.GET.get('type', None)
+
+    allowed_types = ['website', 'journal', 'issue', 'article']
+
+    if not dtype in allowed_types:
+        raise exc.HTTPBadRequest('type parameter is expected and must be %s' % str(allowed_types))
+
+    return Response('True')
 
 @view_config(route_name='lines_data')
+@define_mode
 def general_lines_data(request):
     code = request.GET.get('code')
     begin = request.GET.get('begin', '0000-01-01')
     end = request.GET.get('end', '9999-12-31')
     tqx = tools.tqx_dict(request.GET.get('tqx', 'reqId:0'))
-
-    ratchetctrl = get_ratchetctrl(request)
 
     if end < begin:
         raise exc.HTTPBadRequest()
@@ -33,7 +55,7 @@ def general_lines_data(request):
     options = {}
 
     if not 'out' in tqx or tqx['out'] == 'gviz':
-        description, data = ratchetctrl.general_article_year_month_lines_chart(
+        description, data = request.statsctrl.general_article_year_month_lines_chart(
             code,
             'gviz',
             begin,
@@ -49,7 +71,7 @@ def general_lines_data(request):
         return Response(chart.data_table_response(req_id=tqx['reqId']), content_type='text/javascript')
 
     elif tqx['out'] == 'csv':
-        data = ratchetctrl.general_article_year_month_lines_chart(
+        data = request.statsctrl.general_article_year_month_lines_chart(
             code,
             'csv',
             begin,
@@ -59,16 +81,15 @@ def general_lines_data(request):
         return Response(data, content_type='text/csv')
 
 @view_config(route_name='pie_data')
+@define_mode
 def general_pie_data(request):
     code = request.GET.get('code')
     tqx = tools.tqx_dict(request.GET.get('tqx', 'reqId:0'))
 
-    ratchetctrl = get_ratchetctrl(request)
-
     options = {}
 
     if not 'out' in tqx or tqx['out'] == 'gviz':
-        description, data = ratchetctrl.general_source_page_pie_chart(
+        description, data = request.statsctrl.general_source_page_pie_chart(
             code,
             'gviz'
         )
@@ -82,7 +103,7 @@ def general_pie_data(request):
         return Response(chart.data_table_response(req_id=tqx['reqId']), content_type='text/javascript')
 
     elif tqx['out'] == 'csv':
-        data = ratchetctrl.general_source_page_pie_chart(
+        data = request.statsctrl.general_source_page_pie_chart(
             code,
             'csv'
         )
