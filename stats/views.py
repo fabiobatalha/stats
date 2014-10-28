@@ -29,15 +29,37 @@ def define_mode(wrapped):
 
     return wrapper
 
-@view_config(route_name='list_data')
+@view_config(route_name='subject_area_pie_data')
 @define_mode
-def general_list_data(request):
-    dtype = request.GET.get('type', None)
+def subject_area_pie_data(request):
+    code = request.GET.get('code')
 
-    allowed_types = ['website', 'journal', 'issue', 'article']
+    tqx = tools.tqx_dict(request.GET.get('tqx', 'reqId:0'))
 
-    if not dtype in allowed_types:
-        raise exc.HTTPBadRequest('type parameter is expected and must be %s' % str(allowed_types))
+    if not 'out' in tqx or tqx['out'] == 'gviz':
+        description, data = request.statsctrl.subject_area_pie_chart(
+            code,
+            'gviz'
+        )
+
+        chart = gchart.GChart(
+            data,
+            description
+        )
+
+        return Response(chart.data_table_response(req_id=tqx['reqId']), content_type='text/javascript')
+
+    elif tqx['out'] == 'csv':
+        data = request.statsctrl.subject_area_pie_chart(
+            code,
+            'csv'
+        )
+
+        return Response(data, content_type='text/csv')
+
+@view_config(route_name='list_journals_data')
+@define_mode
+def list_journals_data(request):
 
     return Response('True')
 
@@ -86,8 +108,6 @@ def general_pie_data(request):
     code = request.GET.get('code')
     tqx = tools.tqx_dict(request.GET.get('tqx', 'reqId:0'))
 
-    options = {}
-
     if not 'out' in tqx or tqx['out'] == 'gviz':
         description, data = request.statsctrl.general_source_page_pie_chart(
             code,
@@ -96,8 +116,7 @@ def general_pie_data(request):
 
         chart = gchart.GChart(
             data,
-            description,
-            options
+            description
         )
 
         return Response(chart.data_table_response(req_id=tqx['reqId']), content_type='text/javascript')
@@ -153,6 +172,25 @@ def general_pie(request):
     chart = gchart.deploy(
         gchart.Pie,
         '/general/pie/data/?%s' % request.query_string,
+        options=options,
+        importjs=True
+    )
+
+    return {'chart': chart}
+
+@view_config(route_name='subject_area_pie', renderer='templates/general.mako')
+def subject_area_pie(request):
+    importjs = request.GET.get('importjs', False)
+
+    options = {
+        'legend': {'position': 'rigth'},
+        'width': '500',
+        'height': '300'
+    }
+
+    chart = gchart.deploy(
+        gchart.Pie,
+        '/subject_area/pie/data/?%s' % request.query_string,
         options=options,
         importjs=True
     )

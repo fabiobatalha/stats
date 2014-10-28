@@ -12,7 +12,7 @@ def base_data_manager(wrapped):
 
     @tools.check_session
     def wrapper(request, *arg, **kwargs):
-        if request.session['mode'] == 'counter':
+        if 'mode' in request.session and request.session['mode'] == 'counter':
             setattr(request, 'statsctrl', request.stats_counter)
         else:
             setattr(request, 'statsctrl', request.stats_scielo)

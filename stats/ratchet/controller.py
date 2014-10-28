@@ -11,7 +11,12 @@ from stats import articlemeta
 def cache_key_with_object_address(namespace, fn, **kw):
     fname = fn.__name__
     def generate_key(*arg):
-        return namespace or '' + "_" + fname + "_".join(str(item) for item in arg)
+        keys = [
+            namespace or '',
+            fname,
+            str(id(arg[0]))
+        ]+[i for i in arg[1:]]
+        return str('_'.join(keys)) 
     return generate_key
 
 cache_region = make_region(name='ratchet', function_key_generator=cache_key_with_object_address)
@@ -31,22 +36,28 @@ class Ratchet():
     @cache_region.cache_on_arguments()
     def general(self, code):
 
-        data = self.ratchetclient.query('general').filter(code=code).next()
+        try:
+            data = self.ratchetclient.query('general').filter(code=code).next()
+        except:
+            return None
 
         return data
 
     @cache_region.cache_on_arguments()
     def journal(self, code):
-
-        data = self.ratchetclient.query('journals').filter(code=code)
+        try:
+            data = self.ratchetclient.query('journals').get(code=code)
+        except:
+            return None
 
         return data
 
     @cache_region.cache_on_arguments()
-    def journals_list(self, collection):
+    def collection_journals(self, collection):
 
-        journals = {}
-        for journal in self.ratchetclient.query('journals').all():
-            jn = journals.setdefault(journal['code'], journal)
+        try:
+            data = self.ratchetclient.query('journals').filter(collection=collection)
+        except:
+            return None
 
-        return journals
+        return data

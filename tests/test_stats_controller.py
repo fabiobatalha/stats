@@ -24,10 +24,11 @@ class StatsTests(unittest.TestCase):
         }
 
     def test_thematic_area_pie_data(self):
+        from dummy_articlemeta import DummyArticleMetaV1
 
-        ctrl = Stats('fakeratchet', 'fakearticlemeta')
+        ctrl = Stats('fakeratchet', DummyArticleMetaV1('http://fakeapiuri.com'))
 
-        description, data = ctrl.thematic_area_pie_chart('scl')
+        description, data = ctrl._thematic_area_pie_chart_data('scl')
 
 
     def test_journals_list_to_gviz_data(self):

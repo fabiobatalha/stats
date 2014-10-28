@@ -21,11 +21,8 @@ class ArticleMeta():
     def __init__(self, api_uri):
         self.api_uri = api_uri
 
-        self.journals = self._journals()
-        self.collections = self._collections()
-
     @cache_region.cache_on_arguments()
-    def _collections(self):
+    def _request_collections(self):
         """
         Retrieve all collection basic data from Articlemeta
         """
@@ -36,18 +33,7 @@ class ArticleMeta():
         return response.json()
 
     @cache_region.cache_on_arguments()
-    def certified_collections(self):
-
-        data = {}
-
-        for collection in self.collections:
-            if collection['status'] == 'certified':
-                data[collection['acron']] = collection['name']['en']
-
-        return data
-
-    @cache_region.cache_on_arguments()
-    def _journal(self, code, collection):
+    def _request_journal(self, code, collection):
         """
         Retrieve a journal metadata from Articlemeta
         """
@@ -60,14 +46,9 @@ class ArticleMeta():
 
         response = tools.do_request(url, params=params).json()
 
-        try:
-            response = response[0]
-        except IndexError:
-            return None
+        return response
 
-        return Journal(response)
-
-    def _journals(self):
+    def _request_journals(self):
         """
         Retrieve all journals metadata from Articlemeta
         """
@@ -76,27 +57,53 @@ class ArticleMeta():
 
         params = {'offset': 0}
 
-        journals = {}
         while True:
-
             response = tools.do_request(url, params=params).json()
-
             if len(response['objects']) == 0:
-                break
+                raise StopIteration
+            params['offset'] += 1000
+            yield response
 
+    def collections(self):
+        return self._request_collections()
+
+    def journals(self):
+        journals = {}
+        for response in self._request_journals():
             for identifier in response['objects']:
                 for code in identifier['code']:
-                    journal = self._journal(
+                    journal = self.journal(
                         code, identifier['collection']
                     )
                     if journal:
                         coll = journals.setdefault(journal.collection_acronym, {})
                         coll[journal.scielo_issn] = journal
-            
-            params['offset'] += 1000
 
         return journals
 
+    def journal(self, code, collection):
+
+        response = self._request_journal(code, collection)
+
+        try:
+            response = response[0]
+        except IndexError:
+            return None
+
+        return Journal(response)
+
+
     def collection_journals(self, collection):
 
-        return self.journals[collection]
+        return self.journals()[collection]
+
+    @cache_region.cache_on_arguments()
+    def certified_collections(self):
+
+        data = {}
+
+        for collection in self.collections():
+            if collection['status'] == 'certified':
+                data[collection['acron']] = collection['name']['en']
+
+        return data

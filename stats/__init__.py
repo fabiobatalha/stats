@@ -6,7 +6,7 @@ from stats.ratchet.controller import ratchet_ctrl
 from stats.ratchet.controller import cache_region as ratchet_cache_region
 from stats.articlemeta.controller import articlemeta_ctrl
 from stats.articlemeta.controller import cache_region as articlemeta_cache_region
-
+from stats.controller import cache_region as stats_cache_region
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
@@ -22,7 +22,9 @@ def main(global_config, **settings):
     config.add_route('pie_data', '/general/pie/data/')
     config.add_route('lines', '/general/lines/')
     config.add_route('lines_data', '/general/lines/data/')
-    config.add_route('list_data', '/general/list/data/')
+    config.add_route('subject_area_pie_data', '/subject_area/pie/data/')
+    config.add_route('subject_area_pie', '/subject_area/pie/')
+    config.add_route('list_journals_data', '/journals/list/data/')
     config.add_route('ajx_toggle_mode', '/ajx/toggle_mode/')
     config.add_route('sess_clean_journal', '/sess/clean_journal/')
 
@@ -36,9 +38,11 @@ def main(global_config, **settings):
         cache_config['arguments'] = {'url': settings['memcached_host'], 'binary': True}
         ratchet_cache_region.configure('dogpile.cache.pylibmc', **cache_config)
         articlemeta_cache_region.configure('dogpile.cache.pylibmc', **cache_config)
+        stats_cache_region.configure('dogpile.cache.pylibmc', **cache_config)
     else:
         ratchet_cache_region.configure('dogpile.cache.null')
         articlemeta_cache_region.configure('dogpile.cache.null')
+        stats_cache_region.configure('dogpile.cache.null')
 
 
     # External API's Config
